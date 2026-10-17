@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CubePicture, sampleDice, sampleParts } from '../components/CubePicture'
+import { CubePicture } from '../components/CubePicture'
+import { sampleDice, sampleParts } from '../cube/samples'
 import { Icon } from '../components/Icon'
 import { ScreenFrame } from '../components/ScreenFrame'
 import { TrayPiece } from '../components/TrayPiece'
@@ -181,7 +182,7 @@ function SkinSample({ slot }: { slot: CosmeticSlot }) {
   if (slot === 'board') return <CubePicture extent={72} dice={sampleDice} bounds={false} />
   return (
     <span className="sample-row">
-      {[CubePieces.ell, CubePieces.tee, CubePieces.tripod].map((p) => <TrayPiece key={p.id} shape={p.cells} colorKey={p.colorKey} size={52} />)}
+      {[CubePieces.ell, CubePieces.tee, CubePieces.tripod].map((p) => <TrayPiece key={p.id} shape={p.cells} colorKey={p.colorKey} size={44} />)}
     </span>
   )
 }

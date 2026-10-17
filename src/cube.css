@@ -598,3 +598,10 @@
     animation: none;
   }
 }
+
+/* Sheets never run off a short screen (a phone held sideways). */
+.q-sheet {
+  max-height: calc(100dvh - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

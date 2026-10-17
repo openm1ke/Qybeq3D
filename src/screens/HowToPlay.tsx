@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { CubePicture, sampleDice, sampleParts } from '../components/CubePicture'
+import { CubePicture } from '../components/CubePicture'
+import { sampleDice, sampleParts } from '../cube/samples'
 import { ScreenFrame } from '../components/ScreenFrame'
 import { TrayPiece } from '../components/TrayPiece'
 import { PrimaryAction, QuietAction } from '../components/ui'

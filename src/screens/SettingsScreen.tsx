@@ -3,11 +3,10 @@ import type { AudioSettings } from '../audio/audioService'
 import { Icon } from '../components/Icon'
 import { ScreenFrame } from '../components/ScreenFrame'
 import { vibrationSupported } from '../feel/haptics'
+import { webExtras } from '../platform/webExtras'
 import { useText, type Language } from '../i18n/text'
 import type { GameSettings } from '../settings/gameSettings'
 
-/** Analytics and the privacy policy: the open web build only. */
-export const webExtras = import.meta.env.VITE_PLATFORM !== 'yandex' && import.meta.env.VITE_PLATFORM !== 'vk'
 
 /** Deliberately small: every switch here does something real (mobile
  * `SettingsScreen`, the parts a browser has). */

@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import { AppearanceContext, presetAppearance } from '../cosmetics/appearance'
 import { presets } from '../cosmetics/skins'
-import { CubePicture, sampleDice, sampleParts } from '../components/CubePicture'
+import { CubePicture } from '../components/CubePicture'
+import { sampleDice, sampleParts } from '../cube/samples'
 import { CubePuzzles, CubeFormats } from '../cube/generator'
 import { paintTrayPiece } from '../cube/tray'
 

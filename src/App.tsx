@@ -11,6 +11,7 @@ import { CubeRepository, dailySessionFor } from './cube/storage'
 import { formatClock, loadLanguage, saveLanguage, TextContext, textFor, type Language } from './i18n/text'
 import { webText } from './i18n/web'
 import { platform } from './platform'
+import { webExtras } from './platform/webExtras'
 import {
   availableStars,
   loadPlayerProgress,
@@ -28,7 +29,7 @@ import { FormatSheet } from './screens/FormatSheet'
 import { CubeScreen } from './screens/game/CubeScreen'
 import { HowToPlay } from './screens/HowToPlay'
 import { MainMenu } from './screens/MainMenu'
-import { SettingsScreen, webExtras } from './screens/SettingsScreen'
+import { SettingsScreen } from './screens/SettingsScreen'
 import { loadGameSettings, prefersReducedMotion, saveGameSettings, type GameSettings } from './settings/gameSettings'
 import './App.css'
 import './game.css'

@@ -5,7 +5,7 @@ import { Curves } from '../cube/math'
 import { paintCube } from '../cube/painter'
 import { CubeScene, Solid } from '../cube/scene'
 import { prepareCanvas } from '../rendering/canvas'
-import { sampleDice, sampleParts } from './CubePicture'
+import { sampleDice, sampleParts } from '../cube/samples'
 
 const camera = new CubeCamera()
 
