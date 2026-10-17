@@ -1,109 +1,176 @@
 import type { ThemePreset } from '../cosmetics/skins'
 import { storage } from '../platform/storage'
 
-const storageKey = 'qybeq.progress.v1'
+/**
+ * Durable puzzle records and the spendable cosmetic wallet, as on the phone
+ * (`PlayerProgress`, `PuzzleAttemptResult`, `CompletionAward`). Earned stars
+ * are derived from best results; only spending is stored as a counter, so
+ * replaying a completion can never mint stars.
+ */
+
+export const progressStorageKey = 'qybeq3d.progress.v1'
+
+/** Facts frozen at the moment a puzzle is completed. */
+export interface PuzzleAttempt {
+  readonly elapsedMs: number
+  readonly assistanceUsed: boolean
+  /** Solved within this, unassisted: three stars. */
+  readonly fastTimeMs: number
+}
+
+export function attemptStars(attempt: PuzzleAttempt): number {
+  if (attempt.assistanceUsed) return 1
+  return attempt.elapsedMs <= attempt.fastTimeMs ? 3 : 2
+}
+
+/** What one completion changed in durable progress. */
+export interface CompletionAward {
+  readonly key: string
+  readonly attemptStars: number
+  readonly previousBest: number
+  readonly earnedDelta: number
+  readonly availableStars: number
+  readonly isFirstCompletion: boolean
+}
+
+export interface DailyResult {
+  readonly stars: number
+  readonly elapsedMs: number
+  readonly assistanceUsed: boolean
+  readonly completedAt: string
+}
 
 export interface PlayerProgress {
-  availableStars: number
-  solvedPuzzleCount: number
-  unlockedThemeIds: readonly string[]
-  dailyBestStars: Readonly<Record<string, number>>
+  readonly bestStars: Readonly<Record<string, number>>
+  readonly dailyResults: Readonly<Record<string, DailyResult>>
+  readonly unlockedPresetIds: readonly string[]
+  readonly starsSpent: number
 }
 
-const emptyProgress: PlayerProgress = {
-  availableStars: 0,
-  solvedPuzzleCount: 0,
-  unlockedThemeIds: ['classic'],
-  dailyBestStars: {},
+const empty: PlayerProgress = { bestStars: {}, dailyResults: {}, unlockedPresetIds: ['classic'], starsSpent: 0 }
+
+export function dayKey(date: Date): string {
+  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function localDayKey(date = new Date()): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const isDayKey = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
 
 export function loadPlayerProgress(): PlayerProgress {
   try {
-    const parsed = JSON.parse(storage.getItem(storageKey) ?? 'null') as Partial<PlayerProgress> | null
-    if (!parsed) return emptyProgress
-    const unlocked = Array.isArray(parsed.unlockedThemeIds)
-      ? parsed.unlockedThemeIds.filter((id): id is string => typeof id === 'string')
-      : []
-    const daily = parsed.dailyBestStars && typeof parsed.dailyBestStars === 'object'
-      ? Object.fromEntries(Object.entries(parsed.dailyBestStars).filter(([, stars]) => typeof stars === 'number' && stars >= 1 && stars <= 3))
-      : {}
+    const json = JSON.parse(storage.getItem(progressStorageKey) ?? 'null')
+    if (!json || typeof json !== 'object') return empty
+    const bestStars: Record<string, number> = {}
+    for (const [key, stars] of Object.entries(json.puzzleBestStars ?? {})) {
+      if (key.startsWith('roll:') && Number.isInteger(stars) && (stars as number) >= 1 && (stars as number) <= 3) bestStars[key] = stars as number
+    }
+    const dailyResults: Record<string, DailyResult> = {}
+    for (const [key, raw] of Object.entries(json.dailyResults ?? {})) {
+      const r = raw as Partial<DailyResult & { assisted: boolean }>
+      if (!isDayKey(key) || !Number.isInteger(r.stars) || r.stars! < 1 || r.stars! > 3 || !Number.isInteger(r.elapsedMs)) continue
+      dailyResults[key] = { stars: r.stars!, elapsedMs: r.elapsedMs!, assistanceUsed: r.assisted === true, completedAt: String(r.completedAt ?? '') }
+    }
+    const unlocked = Array.isArray(json.unlockedPresetIds) ? json.unlockedPresetIds.filter((id: unknown): id is string => typeof id === 'string' && id !== '') : []
     return {
-      availableStars: Number.isInteger(parsed.availableStars) && (parsed.availableStars ?? -1) >= 0 ? parsed.availableStars! : 0,
-      solvedPuzzleCount: Number.isInteger(parsed.solvedPuzzleCount) && (parsed.solvedPuzzleCount ?? -1) >= 0 ? parsed.solvedPuzzleCount! : 0,
-      unlockedThemeIds: [...new Set(['classic', ...unlocked])],
-      dailyBestStars: daily,
+      bestStars,
+      dailyResults,
+      unlockedPresetIds: [...new Set(['classic', ...unlocked])],
+      starsSpent: Number.isInteger(json.starsSpent) && json.starsSpent >= 0 ? json.starsSpent : 0,
     }
   } catch {
-    return emptyProgress
+    return empty
   }
 }
 
 export function savePlayerProgress(progress: PlayerProgress): void {
-  try { storage.setItem(storageKey, JSON.stringify(progress)) } catch { /* Optional storage. */ }
+  try {
+    storage.setItem(progressStorageKey, JSON.stringify({
+      schema: 1,
+      puzzleBestStars: progress.bestStars,
+      dailyResults: Object.fromEntries(Object.entries(progress.dailyResults).map(([key, r]) => [key, { stars: r.stars, elapsedMs: r.elapsedMs, assisted: r.assistanceUsed, completedAt: r.completedAt }])),
+      starsSpent: progress.starsSpent,
+      unlockedPresetIds: [...progress.unlockedPresetIds].sort(),
+    }))
+  } catch {
+    // Optional storage.
+  }
 }
 
-export function awardCompletion(progress: PlayerProgress, source: 'new' | 'daily', stars: number, now = new Date()): PlayerProgress {
-  const safeStars = Math.max(1, Math.min(3, Math.round(stars)))
-  if (source === 'new') {
-    return {
+export function lifetimeEarned(progress: PlayerProgress): number {
+  return Object.values(progress.bestStars).reduce((s, v) => s + v, 0) + Object.values(progress.dailyResults).reduce((s, r) => s + r.stars, 0)
+}
+
+export function availableStars(progress: PlayerProgress): number {
+  return Math.max(0, lifetimeEarned(progress) - progress.starsSpent)
+}
+
+export function solvedPuzzleCount(progress: PlayerProgress): number {
+  return Object.keys(progress.bestStars).length + Object.keys(progress.dailyResults).length
+}
+
+export function ownsPreset(progress: PlayerProgress, id: string): boolean {
+  return id === 'classic' || progress.unlockedPresetIds.includes(id)
+}
+
+export function recordPuzzle(progress: PlayerProgress, puzzleKey: string, attempt: PuzzleAttempt): [PlayerProgress, CompletionAward] {
+  const key = puzzleKey.startsWith('roll:') ? puzzleKey : `roll:${puzzleKey}`
+  const previous = progress.bestStars[key] ?? 0
+  const stars = attemptStars(attempt)
+  const nextBest = Math.max(stars, previous)
+  const next = nextBest === previous ? progress : { ...progress, bestStars: { ...progress.bestStars, [key]: nextBest } }
+  return [next, { key, attemptStars: stars, previousBest: previous, earnedDelta: nextBest - previous, availableStars: availableStars(next), isFirstCompletion: previous === 0 }]
+}
+
+export function recordDaily(progress: PlayerProgress, day: Date, attempt: PuzzleAttempt, completedAt = new Date()): [PlayerProgress, CompletionAward] {
+  const date = dayKey(day)
+  const before = progress.dailyResults[date]
+  const previous = before?.stars ?? 0
+  const stars = attemptStars(attempt)
+  const nextBest = Math.max(stars, previous)
+  let next = progress
+  if (nextBest !== previous) {
+    next = {
       ...progress,
-      availableStars: progress.availableStars + safeStars,
-      solvedPuzzleCount: progress.solvedPuzzleCount + 1,
+      dailyResults: {
+        ...progress.dailyResults,
+        [date]: {
+          stars: nextBest,
+          elapsedMs: stars >= previous ? attempt.elapsedMs : before!.elapsedMs,
+          assistanceUsed: stars >= previous ? attempt.assistanceUsed : before!.assistanceUsed,
+          completedAt: completedAt.toISOString(),
+        },
+      },
     }
   }
-
-  const day = localDayKey(now)
-  const previous = progress.dailyBestStars[day] ?? 0
-  const best = Math.max(previous, safeStars)
-  return {
-    ...progress,
-    availableStars: progress.availableStars + best - previous,
-    solvedPuzzleCount: progress.solvedPuzzleCount + (previous === 0 ? 1 : 0),
-    dailyBestStars: { ...progress.dailyBestStars, [day]: best },
-  }
+  return [next, { key: `daily:${date}`, attemptStars: stars, previousBest: previous, earnedDelta: nextBest - previous, availableStars: availableStars(next), isFirstCompletion: previous === 0 }]
 }
 
-export function purchaseTheme(progress: PlayerProgress, theme: ThemePreset): PlayerProgress | null {
-  if (progress.unlockedThemeIds.includes(theme.id)) return progress
-  if (theme.price <= 0 || progress.availableStars < theme.price) return null
-  return {
-    ...progress,
-    availableStars: progress.availableStars - theme.price,
-    unlockedThemeIds: [...progress.unlockedThemeIds, theme.id],
-  }
+export function purchasePreset(progress: PlayerProgress, preset: ThemePreset): PlayerProgress | null {
+  if (ownsPreset(progress, preset.id)) return progress
+  if (preset.price <= 0 || availableStars(progress) < preset.price) return null
+  return { ...progress, starsSpent: progress.starsSpent + preset.price, unlockedPresetIds: [...progress.unlockedPresetIds, preset.id] }
 }
 
+const dateOf = (key: string) => {
+  const [y, m, d] = key.split('-').map(Number)
+  return Date.UTC(y, m - 1, d) / 86_400_000
+}
+
+/** The active Daily run: an unfinished today does not break yesterday's. */
 export function currentDailyStreak(progress: PlayerProgress, now = new Date()): number {
-  const completed = new Set(Object.keys(progress.dailyBestStars))
+  const completed = new Set(Object.keys(progress.dailyResults).map(dateOf))
   if (completed.size === 0) return 0
-  const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  if (!completed.has(localDayKey(cursor))) cursor.setDate(cursor.getDate() - 1)
+  let cursor = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000
+  if (!completed.has(cursor)) cursor -= 1
   let streak = 0
-  while (completed.has(localDayKey(cursor))) {
-    streak += 1
-    cursor.setDate(cursor.getDate() - 1)
+  while (completed.has(cursor)) {
+    streak++
+    cursor -= 1
   }
   return streak
 }
 
-export const playerProgressStorageKey = storageKey
-
-/** The longest run of consecutive days with a completed Daily Challenge. */
 export function bestDailyStreak(progress: PlayerProgress): number {
-  const days = Object.keys(progress.dailyBestStars)
-    .map((key) => {
-      const [year, month, day] = key.split('-').map(Number)
-      return Date.UTC(year, month - 1, day) / 86_400_000
-    })
-    .filter(Number.isFinite)
-    .sort((a, b) => a - b)
+  const days = Object.keys(progress.dailyResults).map(dateOf).sort((a, b) => a - b)
   let best = 0
   let run = 0
   let previous = Number.NaN
@@ -115,7 +182,6 @@ export function bestDailyStreak(progress: PlayerProgress): number {
   return best
 }
 
-/** Today's best Daily result (1–3 stars), or 0 if not yet solved. */
-export function todaysDailyStars(progress: PlayerProgress, now = new Date()): number {
-  return progress.dailyBestStars[localDayKey(now)] ?? 0
+export function dailyStarsFor(progress: PlayerProgress, day: Date): number {
+  return progress.dailyResults[dayKey(day)]?.stars ?? 0
 }

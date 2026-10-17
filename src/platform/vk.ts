@@ -4,14 +4,14 @@ import { setStorageBackend } from './storage'
 import { VKStorage, type VKStorageTransport } from './vkStorage'
 
 export const VK_STORAGE_KEYS = [
-  'qybeq.analytics.v1',
-  'qybeq.language.v1',
-  'qybeq.audio.v1',
-  'qybeq.progress.v1',
-  'qybeq.appearance.v1',
-  'qybeq.savedGame.v1',
-  'qybeq.savedDaily.v1',
-  'qybeq.tips.v1',
+  'qybeq3d.analytics.v1',
+  'qybeq3d.language',
+  'qybeq3d.audio.v1',
+  'qybeq3d.progress.v1',
+  'qybeq3d.appearance.v1',
+  'qybeq3d.settings.v1',
+  'qybeq3d.cube.current.v1',
+  'qybeq3d.cube.daily.v1',
 ] as const
 
 export function timeout<T>(promise: Promise<T>, ms = 10_000): Promise<T> {

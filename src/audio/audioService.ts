@@ -7,7 +7,7 @@ export interface AudioSettings {
   musicVolume: number
 }
 
-const settingsKey = 'qybeq.audio.v1'
+const settingsKey = 'qybeq3d.audio.v1'
 const musicTracks = ['./audio/quiet_geometry.mp3', './audio/glass_horizon.mp3', './audio/soft_circuit.mp3']
 const effects = {
   dice: ['./audio/dice_roll.wav', .34],

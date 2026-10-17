@@ -75,6 +75,9 @@ export default defineConfig(({ mode }) => {
   const vk = mode === 'vk'
   return {
     base: './',
+    define: {
+      __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')).version),
+    },
     plugins: [react(), ...(yandex ? [yandexGames()] : []), ...(vk ? [vkGames(mode)] : [])],
     build: {
       outDir: yandex ? 'dist-yandex' : vk ? 'dist-vk' : 'dist',

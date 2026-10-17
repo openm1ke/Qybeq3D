@@ -1,7 +1,7 @@
 import { storage } from '../platform/storage'
 
 const counterId = 113110265
-const preferenceKey = 'qybeq.analytics.v1'
+const preferenceKey = 'qybeq3d.analytics.v1'
 const scriptId = 'qybeq-yandex-metrika'
 const disabledProperty = `disableYaCounter${counterId}`
 

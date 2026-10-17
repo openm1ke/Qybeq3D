@@ -29,7 +29,7 @@ export interface Appearance {
 
 export const classicAppearance: Appearance = { pieces: pieceSkins[0], dice: diceSkins[0], board: boardSkins[0] }
 
-export const appearanceStorageKey = 'qybeq.appearance.v1'
+export const appearanceStorageKey = 'qybeq3d.appearance.v1'
 
 /** Whether [item] can be used: free, or part of a preset the player owns. */
 export function isItemUnlocked(item: CosmeticItem, owned: ReadonlySet<string>): boolean {

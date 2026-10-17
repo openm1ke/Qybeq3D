@@ -8,30 +8,34 @@ import { GamePalette } from './palette'
 import { CubeScene, Solid, SolidMotion } from './scene'
 
 /**
- * The tray's slots (`CubeTrayLayout`): two rows, filled column by column, at
- * least four columns on screen (more when wide, so slots stay about as wide
- * as they are tall). A bigger set scrolls sideways; a smaller one is centred.
+ * The tray's slots (`CubeTrayLayout`): [rows] rows (two on a phone), filled
+ * column by column, at least four columns on screen when there are two rows
+ * (more when wide, so slots stay about as wide as they are tall). A bigger
+ * set scrolls sideways; a smaller one is centred. The web's side panel asks
+ * for its own [rows] and [columnsOnScreen].
  */
 export class CubeTrayLayout {
   readonly area: Rect
+  readonly rows: number
   readonly columns: number
   readonly visibleColumns: number
   readonly contentWidth: number
   readonly slots: [string, Rect][]
 
-  constructor(area: Rect, ids: readonly string[], scroll: number) {
+  constructor(area: Rect, ids: readonly string[], scroll: number, rows = 2, columnsOnScreen?: number) {
     this.area = area
-    this.columns = Math.floor((ids.length + 1) / 2)
-    this.visibleColumns = Math.max(4, Math.floor(rectWidth(area) / (rectHeight(area) * 0.65)))
+    this.rows = rows
+    this.columns = Math.ceil(ids.length / rows)
+    const slotHeight = rectHeight(area) / rows
+    this.visibleColumns = columnsOnScreen ?? Math.max(4, Math.floor(rectWidth(area) / (slotHeight * 1.3)))
     const slotWidth = rectWidth(area) / this.visibleColumns
-    const slotHeight = rectHeight(area) / 2
     this.contentWidth = this.columns * slotWidth
     const left = this.contentWidth < rectWidth(area)
       ? area.left + (rectWidth(area) - this.contentWidth) / 2
       : area.left - Math.min(Math.max(scroll, 0), this.maxScroll)
     this.slots = ids.map((id, i) => {
-      const x = left + Math.floor(i / 2) * slotWidth
-      const y = area.top + (i % 2) * slotHeight
+      const x = left + Math.floor(i / rows) * slotWidth
+      const y = area.top + (i % rows) * slotHeight
       return [id, { left: x, top: y, right: x + slotWidth, bottom: y + slotHeight }]
     })
   }
