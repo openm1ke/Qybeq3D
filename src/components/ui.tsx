@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import type { DiceSkin } from '../cosmetics/skins'
-import { DieIcon } from './GameCanvas'
+import { DieIcon } from './DieIcon'
 import { Icon, type IconName } from './Icon'
 
 /**
