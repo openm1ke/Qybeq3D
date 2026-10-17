@@ -1,0 +1,23 @@
+#root { min-height: 100svh; }
+button { border: 0; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 2px solid rgba(91, 140, 255, .85); outline-offset: 3px; }
+
+/* Canvas-backed renderers keep an exact logical box; the canvas overflows it. */
+.piece-art, .tile-art { position: relative; display: inline-block; flex: none; }
+.piece-art canvas, .tile-art canvas { pointer-events: none; }
+.wells-art { position: absolute; inset: 0; display: block; }
+
+/* Consent for web analytics (web only), in the app's sheet style. */
+.eyebrow { color: #7a808c; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+.analytics-consent { position: fixed; z-index: 2000; right: max(18px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); width: min(480px, calc(100% - 36px)); display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; padding: 22px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 22px; background: rgba(23, 25, 30, .97); box-shadow: 0 24px 70px rgba(0, 0, 0, .54); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #f2f3f5; }
+.analytics-consent h2 { margin: 7px 0; font-size: 19px; }
+.analytics-consent p { margin: 0; color: #8d93a0; font-size: 13px; line-height: 1.5; }
+.analytics-consent-actions { display: grid; gap: 8px; }
+.analytics-consent-actions a { padding: 3px 5px; color: #5b8cff; text-align: center; font-size: 12px; text-decoration: none; }
+.analytics-consent-actions button { min-width: 104px; padding: 10px 14px; border: 1px solid rgba(255, 255, 255, .11); border-radius: 12px; background: #1e2127; font-weight: 600; white-space: nowrap; }
+.analytics-consent-actions .consent-primary { border-color: rgba(91, 140, 255, .6); background: linear-gradient(180deg, rgb(37, 46, 65), #17191e); }
+@media (max-width: 430px) {
+  .analytics-consent { grid-template-columns: 1fr; gap: 15px; padding: 18px; }
+  .analytics-consent-actions { grid-template-columns: 1fr 1fr; }
+  .analytics-consent-actions a { grid-column: 1 / -1; }
+}

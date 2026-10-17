@@ -1,0 +1,48 @@
+{
+  "name": "qybeq-3d-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:yandex": "vite --mode yandex",
+    "dev:vk": "vite --mode vk",
+    "build": "tsc -b && vite build",
+    "build:yandex": "tsc -b && vite build --mode yandex && node scripts/package-yandex.mjs",
+    "build:vk": "tsc -b && vite build --mode vk",
+    "promo:yandex": "playwright test -c playwright.promo.config.ts",
+    "preview": "vite preview",
+    "preview:yandex": "vite preview --mode yandex",
+    "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "test:e2e:chrome": "playwright test -c playwright.chrome.config.ts"
+  },
+  "dependencies": {
+    "@vkontakte/vk-bridge": "^3.0.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.12.0",
+    "jsdom": "^30.1.1",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.70.1",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.2"
+  }
+}
